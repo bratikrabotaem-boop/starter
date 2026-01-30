@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Мой JSBin Clone</title>
+    <style>
+        body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; }
+        .editors { width: 50%; display: flex; flex-direction: column; border-right: 2px solid #ccc; }
+        textarea { flex: 1; width: 100%; border: none; padding: 10px; font-family: monospace; font-size: 14px; resize: none; outline: none; border-bottom: 1px solid #ddd; }
+        textarea:last-child { border-bottom: none; }
+        .preview { width: 50%; }
+        iframe { width: 100%; height: 100%; border: none; }
+        
+        /* Подписи для полей */
+        .label { background: #eee; padding: 5px; font-weight: bold; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <div class="editors">
+        <div class="label">HTML</div>
+        <textarea id="htmlCode" placeholder="Пиши HTML здесь..."><h1>Привет!</h1></textarea>
+        
+        <div class="label">CSS</div>
+        <textarea id="cssCode" placeholder="Пиши CSS здесь...">body { color: blue; }</textarea>
+        
+        <div class="label">JavaScript</div>
+        <textarea id="jsCode" placeholder="Пиши JS здесь...">console.log('Работает!');</textarea>
+    </div>
+
+    <div class="preview">
+        <iframe id="output"></iframe>
+    </div>
+
+    <script>
+        // Находим элементы
+        const htmlArea = document.getElementById('htmlCode');
+        const cssArea = document.getElementById('cssCode');
+        const jsArea = document.getElementById('jsCode');
+        const iframe = document.getElementById('output');
+
+        function run() {
+            // Собираем содержимое
+            const html = htmlArea.value;
+            const css = `<style>${cssArea.value}</style>`;
+            const js = `<script>${jsArea.value}<\/script>`; // Экранируем закрывающий тег
+
+            // Формируем документ для айфрейма
+            const source = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    ${css}
+                </head>
+                <body>
+                    ${html}
+                    ${js}
+                </body>
+                </html>
+            `;
+
+            // Обновляем содержимое айфрейма
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(source);
+            doc.close();
+        }
+
+        // Запускаем обновление при каждом нажатии клавиши
+        htmlArea.addEventListener('keyup', run);
+        cssArea.addEventListener('keyup', run);
+        jsArea.addEventListener('keyup', run);
+
+        // Первый запуск
+        run();
+    </script>
+</body>
+</html>
