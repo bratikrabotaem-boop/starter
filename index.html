@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>JS Mobile Editor</title>
     <style>
-        /* --- 1. Глобальные настройки --- */
+        /* --- 1. База --- */
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background: #1e1e1e; color: #ccc; }
         
         body { display: flex; flex-direction: column; }
 
-        /* --- 2. Компактная шапка --- */
+        /* --- 2. Шапка --- */
         header {
-            height: 44px; /* Чуть ниже для мобилок */
+            height: 44px;
             background: #252526;
             border-bottom: 1px solid #333;
             display: flex;
@@ -21,15 +21,11 @@
             justify-content: space-between;
             padding: 0 10px;
             flex-shrink: 0;
-            z-index: 10;
+            z-index: 20;
         }
 
-        .logo { 
-            font-weight: bold; color: #fff; font-size: 14px; 
-            display: flex; align-items: center; gap: 6px; 
-            white-space: nowrap; /* Чтобы текст не переносился */
-        }
-        .logo span { background: #007acc; padding: 2px 5px; border-radius: 3px; font-size: 10px; }
+        .logo { font-weight: bold; color: #fff; font-size: 14px; white-space: nowrap; }
+        .logo span { background: #007acc; padding: 2px 5px; border-radius: 3px; font-size: 10px; margin-right: 5px; }
 
         .actions { display: flex; gap: 8px; }
 
@@ -37,24 +33,23 @@
             background: #3c3c3c;
             color: #fff;
             border: 1px solid #555;
-            padding: 4px 10px; /* Компактные кнопки */
+            padding: 0 12px;
             cursor: pointer;
             font-size: 12px;
             border-radius: 3px;
-            height: 28px; /* Фиксированная высота */
+            height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .actions button.primary { background: #0e639c; border-color: #0e639c; }
 
-        /* --- 3. Основная область --- */
+        /* --- 3. Лейаут --- */
         main {
             display: flex;
             flex: 1;
             position: relative;
-            /* По умолчанию (ПК) - горизонтально */
-            flex-direction: row; 
+            flex-direction: row; /* ПК: Слева код, справа результат */
         }
 
         /* --- 4. Панель редакторов --- */
@@ -65,10 +60,17 @@
             flex-direction: column;
             border-right: 1px solid #333;
             background: #1e1e1e;
-            transition: all 0.3s ease; /* Анимация и ширины, и высоты */
+            transition: all 0.3s ease;
+            z-index: 10;
         }
         
-        /* Секция одного кода */
+        /* Сворачивание панели (класс добавляется JS) */
+        #editors-panel.collapsed {
+            width: 0;
+            overflow: hidden;
+            border: none;
+        }
+
         .editor-box {
             flex: 1; 
             display: flex;
@@ -84,7 +86,7 @@
             font-weight: bold;
             color: #858585;
             text-transform: uppercase;
-            display: flex; justify-content: space-between;
+            flex-shrink: 0;
         }
         
         textarea {
@@ -93,54 +95,47 @@
             border: none; resize: none;
             padding: 8px;
             font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 13px; /* Чуть мельче шрифт для телефона */
+            font-size: 13px;
             line-height: 1.4;
         }
 
         /* --- 5. Панель результата --- */
         #output-panel {
             flex: 1;
-            background: #fff;
+            background: #1e1e1e; /* Темный фон, чтобы не слепило */
             position: relative;
-            width: 100%; /* Гарантия ширины */
+            width: 100%;
         }
 
-        iframe { width: 100%; height: 100%; border: none; display: block; }
+        iframe { width: 100%; height: 100%; border: none; display: block; background: #fff; }
 
-        /* --- 6. МОБИЛЬНАЯ АДАПТАЦИЯ (Самое важное) --- */
+        /* --- 6. МОБИЛЬНАЯ ВЕРСИЯ --- */
         @media (max-width: 768px) {
-            main {
-                flex-direction: column; /* Вертикальное расположение */
-            }
+            main { flex-direction: column; }
 
             #editors-panel {
-                width: 100%; /* На всю ширину */
-                height: 50%; /* На пол-экрана */
+                width: 100%; 
+                height: 50%; /* По умолчанию пол-экрана */
                 border-right: none;
-                border-bottom: 4px solid #333; /* Разделитель потолще, чтобы было видно границу */
+                border-bottom: 4px solid #2d2d2d;
             }
 
-            /* Когда скрываем код на мобильном */
+            /* Когда свернуто на мобильном - высота в 0 */
             #editors-panel.collapsed {
-                height: 0; /* Схлопываем высоту, а не ширину */
+                height: 0;
                 width: 100%;
                 border-bottom: none;
             }
-
-            /* Убираем лишние отступы в редакторе, чтобы больше влезало */
-            textarea { font-size: 12px; padding: 5px; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo">
-            <span>JS</span> Editor
-        </div>
+        <div class="logo"><span>JS</span>Editor</div>
         <div class="actions">
             <button onclick="toggleEditors()" id="toggleBtn">Скрыть</button>
-            <button class="primary" onclick="run()">▶ Пуск</button>
+            <button class="primary" onclick="runAndHide()">▶ Пуск</button>
         </div>
     </header>
 
@@ -148,37 +143,15 @@
         <div id="editors-panel">
             <div class="editor-box">
                 <div class="editor-label" style="color:#e34c26">HTML</div>
-                <textarea id="html" spellcheck="false" placeholder="HTML code...">
-<div class="box">
-  <h1>Привет!</h1>
-  <p>Я работаю на телефоне.</p>
-</div></textarea>
+                <textarea id="html" spellcheck="false" placeholder="HTML code..."></textarea>
             </div>
             <div class="editor-box">
                 <div class="editor-label" style="color:#563d7c">CSS</div>
-                <textarea id="css" spellcheck="false" placeholder="CSS code...">
-body { 
-  font-family: sans-serif; 
-  display: flex; 
-  justify-content: center; 
-  align-items: center; 
-  height: 100vh; 
-  margin: 0; 
-  background: #f0f0f0;
-}
-.box { 
-  background: white; 
-  padding: 20px; 
-  border-radius: 12px; 
-  text-align: center; 
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-h1 { margin-top: 0; color: #333; }</textarea>
+                <textarea id="css" spellcheck="false" placeholder="CSS code..."></textarea>
             </div>
             <div class="editor-box">
                 <div class="editor-label" style="color:#f1e05a">JS</div>
-                <textarea id="js" spellcheck="false" placeholder="JS code...">
-// JS code here</textarea>
+                <textarea id="js" spellcheck="false" placeholder="JS code..."></textarea>
             </div>
         </div>
 
@@ -195,16 +168,26 @@ h1 { margin-top: 0; color: #333; }</textarea>
         const editorsPanel = document.getElementById('editors-panel');
         const toggleBtn = document.getElementById('toggleBtn');
 
+        // Логика запуска
         function run() {
             const html = htmlField.value;
             const css = `<style>${cssField.value}</style>`;
             const js = `<script>${jsField.value}<\/script>`;
             
+            // Важно: viewport для мобильных устройств внутри iframe
             const code = `
                 <!DOCTYPE html>
                 <html>
-                <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">${css}</head>
-                <body>${html}${js}</body>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>body { margin: 0; background: #1e1e1e; color: #fff; }</style> 
+                    ${css}
+                </head>
+                <body>
+                    ${html}
+                    ${js}
+                </body>
                 </html>`;
 
             const doc = previewFrame.contentWindow.document;
@@ -213,17 +196,29 @@ h1 { margin-top: 0; color: #333; }</textarea>
             doc.close();
         }
 
+        // Новая функция: Запустить И скрыть редактор (для мобилок)
+        function runAndHide() {
+            run();
+            // Если мы на мобильном (ширина меньше 768px) - сворачиваем редактор
+            if (window.innerWidth <= 768) {
+                if (!editorsPanel.classList.contains('collapsed')) {
+                    toggleEditors();
+                }
+            }
+        }
+
+        // Переключатель видимости
         function toggleEditors() {
             editorsPanel.classList.toggle('collapsed');
-            // Меняем текст кнопки
+            
             if (editorsPanel.classList.contains('collapsed')) {
-                toggleBtn.innerText = "Код";
+                toggleBtn.innerText = "Код"; // Если скрыто, кнопка зовет назад в "Код"
             } else {
                 toggleBtn.innerText = "Скрыть";
             }
         }
 
-        // Поддержка Tab
+        // Tab для отступов
         [htmlField, cssField, jsField].forEach(ta => {
             ta.addEventListener('keydown', function(e) {
                 if (e.key === 'Tab') {
@@ -236,6 +231,12 @@ h1 { margin-top: 0; color: #333; }</textarea>
             });
         });
 
+        // Заполним демо-кодом, если пусто
+        if(!htmlField.value) {
+           htmlField.value = '<div style="padding: 20px; text-align: center;"><h1>Привет!</h1><p>Нажми "Пуск", и я развернусь на весь экран.</p></div>';
+        }
+
+        // Первый запуск
         window.onload = run;
     </script>
 </body>
