@@ -2,54 +2,213 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Мой JSBin Clone</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeEditor Pro</title>
     <style>
-        body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; }
-        .editors { width: 50%; display: flex; flex-direction: column; border-right: 2px solid #ccc; }
-        textarea { flex: 1; width: 100%; border: none; padding: 10px; font-family: monospace; font-size: 14px; resize: none; outline: none; border-bottom: 1px solid #ddd; }
-        textarea:last-child { border-bottom: none; }
-        .preview { width: 50%; }
-        iframe { width: 100%; height: 100%; border: none; }
+        /* --- CSS Reset & Base --- */
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #1e1e1e; color: #d4d4d4; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* --- Header / Menu --- */
+        header {
+            height: 50px;
+            background-color: #252526;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .logo { font-weight: bold; font-size: 18px; color: #61dafb; letter-spacing: 1px; }
+
+        .controls { display: flex; gap: 10px; }
+
+        button {
+            background-color: #0e639c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button:hover { background-color: #1177bb; }
+        button.secondary { background-color: #3c3c3c; }
+        button.secondary:hover { background-color: #4b4b4b; }
+
+        /* --- Main Layout --- */
+        main {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 50px);
+            position: relative;
+        }
+
+        /* --- Editor Section --- */
+        #editor-container {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #333;
+            transition: width 0.3s ease, transform 0.3s ease;
+            background-color: #1e1e1e;
+        }
+
+        /* Скрытие редактора */
+        #editor-container.hidden {
+            width: 0;
+            overflow: hidden;
+            border: none;
+        }
+
+        .code-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 1px solid #333;
+            min-height: 0; /* Fix for flexbox scrolling */
+        }
+        .code-box:last-child { border-bottom: none; }
+
+        .label {
+            background-color: #2d2d2d;
+            padding: 5px 15px;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: #858585;
+            user-select: none;
+            border-bottom: 1px solid #333;
+        }
         
-        /* Подписи для полей */
-        .label { background: #eee; padding: 5px; font-weight: bold; font-size: 12px; }
+        /* Цветные индикаторы для языков */
+        .label.html { border-left: 3px solid #e34c26; }
+        .label.css { border-left: 3px solid #264de4; }
+        .label.js { border-left: 3px solid #f0db4f; }
+
+        textarea {
+            flex: 1;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            border: none;
+            padding: 10px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+        }
+
+        /* --- Preview Section --- */
+        #preview-container {
+            flex: 1;
+            background-color: white; /* Результат всегда на белом фоне */
+            position: relative;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* --- Responsive fix --- */
+        @media (max-width: 768px) {
+            main { flex-direction: column; }
+            #editor-container { width: 100%; height: 50%; }
+            #editor-container.hidden { height: 0; width: 100%; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="editors">
-        <div class="label">HTML</div>
-        <textarea id="htmlCode" placeholder="Пиши HTML здесь..."><h1>Привет!</h1></textarea>
-        
-        <div class="label">CSS</div>
-        <textarea id="cssCode" placeholder="Пиши CSS здесь...">body { color: blue; }</textarea>
-        
-        <div class="label">JavaScript</div>
-        <textarea id="jsCode" placeholder="Пиши JS здесь...">console.log('Работает!');</textarea>
-    </div>
+    <header>
+        <div class="logo">⚡ MyFiddle</div>
+        <div class="controls">
+            <button class="secondary" id="toggleBtn" onclick="toggleLayout()">👁️ Скрыть код</button>
+            <button onclick="runCode()">▶ Запустить</button>
+        </div>
+    </header>
 
-    <div class="preview">
-        <iframe id="output"></iframe>
-    </div>
+    <main>
+        <div id="editor-container">
+            <div class="code-box">
+                <div class="label html">HTML</div>
+                <textarea id="html-code" spellcheck="false"><div class="card">
+  <h1>Привет, Мир!</h1>
+  <p>Нажми кнопку "Запустить", чтобы обновить.</p>
+</div></textarea>
+            </div>
+            <div class="code-box">
+                <div class="label css">CSS</div>
+                <textarea id="css-code" spellcheck="false">/* Пример CSS */
+body {
+  font-family: sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  background: #f0f2f5;
+}
+.card {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  text-align: center;
+}
+h1 { color: #333; }</textarea>
+            </div>
+            <div class="code-box">
+                <div class="label js">JavaScript</div>
+                <textarea id="js-code" spellcheck="false">// Пример JS
+console.log('Песочница готова к работе!');</textarea>
+            </div>
+        </div>
+
+        <div id="preview-container">
+            <iframe id="preview-frame"></iframe>
+        </div>
+    </main>
 
     <script>
-        // Находим элементы
-        const htmlArea = document.getElementById('htmlCode');
-        const cssArea = document.getElementById('cssCode');
-        const jsArea = document.getElementById('jsCode');
-        const iframe = document.getElementById('output');
+        const htmlEditor = document.getElementById('html-code');
+        const cssEditor = document.getElementById('css-code');
+        const jsEditor = document.getElementById('js-code');
+        const frame = document.getElementById('preview-frame');
+        const editorContainer = document.getElementById('editor-container');
+        const toggleBtn = document.getElementById('toggleBtn');
 
-        function run() {
-            // Собираем содержимое
-            const html = htmlArea.value;
-            const css = `<style>${cssArea.value}</style>`;
-            const js = `<script>${jsArea.value}<\/script>`; // Экранируем закрывающий тег
+        // Функция запуска кода
+        function runCode() {
+            const html = htmlEditor.value;
+            const css = `<style>${cssEditor.value}</style>`;
+            // Оборачиваем JS в try-catch, чтобы ошибки не ломали iframe молча
+            const js = `
+                <script>
+                    try {
+                        ${jsEditor.value}
+                    } catch (err) {
+                        console.error(err);
+                        document.body.innerHTML += '<div style="color:red; background:#ffd0d0; padding:10px; margin-top:20px;">Обишка JS: ' + err + '</div>';
+                    }
+                <\/script>`;
 
-            // Формируем документ для айфрейма
             const source = `
                 <!DOCTYPE html>
                 <html>
                 <head>
+                    <meta charset="UTF-8">
                     ${css}
                 </head>
                 <body>
@@ -59,20 +218,41 @@
                 </html>
             `;
 
-            // Обновляем содержимое айфрейма
-            const doc = iframe.contentWindow.document;
+            // Магия обновления iframe
+            const doc = frame.contentWindow.document;
             doc.open();
             doc.write(source);
             doc.close();
         }
 
-        // Запускаем обновление при каждом нажатии клавиши
-        htmlArea.addEventListener('keyup', run);
-        cssArea.addEventListener('keyup', run);
-        jsArea.addEventListener('keyup', run);
+        // Функция переключения вида (Скрыть/Показать код)
+        function toggleLayout() {
+            editorContainer.classList.toggle('hidden');
+            
+            if (editorContainer.classList.contains('hidden')) {
+                toggleBtn.innerText = "✏️ Показать код";
+            } else {
+                toggleBtn.innerText = "👁️ Скрыть код";
+            }
+        }
 
-        // Первый запуск
-        run();
+        // Запуск при загрузке страницы
+        window.onload = runCode;
+        
+        // Поддержка Tab в textarea (чтобы писать отступы, а не переключать фокус)
+        const textareas = [htmlEditor, cssEditor, jsEditor];
+        textareas.forEach(area => {
+            area.addEventListener('keydown', function(e) {
+                if (e.key == 'Tab') {
+                    e.preventDefault();
+                    var start = this.selectionStart;
+                    var end = this.selectionEnd;
+                    this.value = this.value.substring(0, start) +
+                      "  " + this.value.substring(end);
+                    this.selectionStart = this.selectionEnd = start + 2;
+                }
+            });
+        });
     </script>
 </body>
 </html>
